@@ -160,9 +160,11 @@ function render() {
   else if (state.screen === 'result') app.innerHTML = renderResult();
   else if (state.screen === 'review') app.innerHTML = renderReview();
   if (state.screen === 'quiz') {
-    window.scrollTo({top: document.body.scrollHeight, behavior:'instant'});
+    requestAnimationFrame(() => {
+      window.scrollTo({top: document.body.scrollHeight, behavior:'auto'});
+    });
   } else {
-    window.scrollTo({top:0, behavior:'instant'});
+    window.scrollTo({top:0, behavior:'auto'});
   }
 }
 
