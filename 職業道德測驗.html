@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
 <style>
-  body { font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif; }
+  body { font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif; overscroll-behavior-y: contain; }
   .fade-in { animation: fadeIn .25s ease-out; }
   @keyframes fadeIn { from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
   ::-webkit-scrollbar { width: 8px; }
@@ -161,10 +161,10 @@ function render() {
   else if (state.screen === 'quiz') app.innerHTML = renderQuiz();
   else if (state.screen === 'result') app.innerHTML = renderResult();
   else if (state.screen === 'review') app.innerHTML = renderReview();
-  if (state.screen === 'quiz') {
-    requestAnimationFrame(() => {
+  if (state.screen === 'quiz' || state.screen === 'setup') {
+    setTimeout(() => {
       window.scrollTo({top: document.body.scrollHeight, behavior:'auto'});
-    });
+    }, 60);
   } else {
     window.scrollTo({top:0, behavior:'auto'});
   }
@@ -403,13 +403,6 @@ function renderQuiz() {
         <i class="fa-solid fa-paper-plane mr-1"></i>確定送出
       </button>
       ` : `
-      <div class="mt-5 p-4 rounded-xl ${lastAnswer.correct ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'} text-sm font-medium">
-        <div class="flex items-center gap-2">
-          <i class="fa-solid ${lastAnswer.correct ? 'fa-circle-check' : 'fa-circle-xmark'}"></i>
-          ${lastAnswer.correct ? '答對了！' : `第${q.num}題答錯了，正確答案如上綠色標示`}
-        </div>
-        ${!lastAnswer.correct && q.reason ? `<div class="mt-2 pt-2 border-t border-red-200 text-red-600 font-normal leading-relaxed">${escapeHtml(q.reason)}</div>` : ''}
-      </div>
       <div class="mt-4 grid ${state.idx > 0 ? 'grid-cols-2' : 'grid-cols-1'} gap-3">
         ${state.idx > 0 ? `
         <button onclick="prevQuestion()" class="py-3 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 font-bold transition">
