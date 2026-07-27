@@ -161,7 +161,11 @@ function render() {
   else if (state.screen === 'quiz') app.innerHTML = renderQuiz();
   else if (state.screen === 'result') app.innerHTML = renderResult();
   else if (state.screen === 'review') app.innerHTML = renderReview();
-  window.scrollTo({top:0, behavior:'instant'});
+  if (state.screen === 'quiz') {
+    window.scrollTo({top: document.body.scrollHeight, behavior:'instant'});
+  } else {
+    window.scrollTo({top:0, behavior:'instant'});
+  }
 }
 
 function renderSetup() {
