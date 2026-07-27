@@ -45,6 +45,8 @@ const state = {
   range: null            // 'all' | 'r1'~'r5' | null(未選,與mode互斥)
 };
 
+let scrollMode = 'bottom'; // 'bottom' | 'top' —— 顯示新題目時用top，其餘(含確定送出)預設bottom
+
 function getFilteredData() {
   if (!state.range) return QUIZ_DATA.slice(); // 未選範圍 = 全部題目
   const r = RANGES.find(x => x.key === state.range) || RANGES[0];
@@ -78,6 +80,7 @@ function startQuiz() {
   state.pending = null;
   state.answers = new Array(state.pool.length).fill(null);
   state.screen = 'quiz';
+  scrollMode = 'top';
   render();
 }
 
@@ -106,6 +109,7 @@ function prevQuestion() {
   const ans = state.answers[state.idx];
   state.selected = ans ? state.pool[state.idx].optOrder.indexOf(ans.chosenNum - 1) : null;
   state.pending = state.selected;
+  scrollMode = 'top';
   render();
 }
 
@@ -116,6 +120,7 @@ function nextQuestion() {
     const ans = state.answers[state.idx];
     state.selected = ans ? state.pool[state.idx].optOrder.indexOf(ans.chosenNum - 1) : null;
     state.pending = state.selected;
+    scrollMode = 'top';
     render();
   } else {
     state.screen = 'result';
@@ -160,9 +165,17 @@ function render() {
   else if (state.screen === 'result') app.innerHTML = renderResult();
   else if (state.screen === 'review') app.innerHTML = renderReview();
   if (state.screen === 'quiz' || state.screen === 'setup') {
+    const mode = scrollMode;
     setTimeout(() => {
-      window.scrollTo({top: document.body.scrollHeight, behavior:'auto'});
+      if (state.screen === 'quiz' && mode === 'top') {
+        const card = document.getElementById('quiz-card');
+        if (card) card.scrollIntoView({block:'start', behavior:'auto'});
+        else window.scrollTo({top:0, behavior:'auto'});
+      } else {
+        window.scrollTo({top: document.body.scrollHeight, behavior:'auto'});
+      }
     }, 60);
+    scrollMode = 'bottom'; // 用畢重置為預設(確定送出等其他動作維持捲到最下方)
   } else {
     window.scrollTo({top:0, behavior:'auto'});
   }
@@ -384,7 +397,7 @@ function renderQuiz() {
     </div>
     ` : ''}
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6" id="quiz-card">
       <div class="flex items-start gap-2 mb-5">
         <span class="flex-shrink-0 text-xs font-bold text-white bg-indigo-600 rounded-full px-2 py-1">題${q.num}</span>
         <h2 class="text-lg font-normal text-gray-900 leading-relaxed">${escapeHtml(q.stem)}</h2>
