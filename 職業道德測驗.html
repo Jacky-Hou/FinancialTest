@@ -336,9 +336,9 @@ function renderQuiz() {
     }
     return `
       <button onclick="selectOption(${pos})" ${answered ? 'disabled' : ''}
-        class="option-btn w-full text-left px-3 sm:px-3.5 py-2.5 rounded-xl border-2 flex items-start gap-2 sm:gap-3 transition ${cls}">
+        class="option-btn w-full text-left px-3 py-2 rounded-xl border-2 flex items-start gap-2 transition ${cls}">
         <span class="flex-shrink-0 w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500">${label}</span>
-        <span class="flex-1 text-base font-light leading-relaxed pt-0.5">${escapeHtml(text)}</span>
+        <span class="flex-1 text-base font-light leading-snug pt-0.5">${escapeHtml(text)}</span>
         <span class="flex-shrink-0 pt-1">${icon}</span>
       </button>`;
   }).join('');
@@ -406,7 +406,7 @@ function renderQuiz() {
       </div>
       <h2 class="text-lg font-normal text-gray-900 leading-snug mb-5">${escapeHtml(q.stem)}</h2>
 
-      <div class="space-y-2.5">
+      <div class="space-y-2">
         ${optionsHtml}
       </div>
 
