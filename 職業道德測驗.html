@@ -87,21 +87,23 @@ function startQuiz() {
 }
 
 function selectOption(displayPos) {
-  if (state.answers[state.idx]) return; // 該題已送出作答，鎖定不可再選
-  state.pending = displayPos; // 僅記錄暫選，尚未送出，可重複點選更改
+  const q = state.pool[state.idx];
+  const originalIdx = q.optOrder[displayPos]; // 0-based 原始選項index
+  const chosenNum = originalIdx + 1; // 1-4
+  const correct = chosenNum === q.answer;
+  state.pending = displayPos;
+  state.selected = displayPos;
+  state.answers[state.idx] = { num: q.num, stem: q.stem, options: q.options, optOrder: q.optOrder,
+                                answer: q.answer, chosenNum, correct, reason: q.reason };
   render();
 }
 
-function confirmAnswer() {
-  if (state.pending === null) return; // 尚未選擇任何選項，不可送出
-  if (state.answers[state.idx]) return; // 已送出過，防止重複送出
-  const q = state.pool[state.idx];
-  const originalIdx = q.optOrder[state.pending]; // 0-based 原始選項index
-  const chosenNum = originalIdx + 1; // 1-4
-  const correct = chosenNum === q.answer;
-  state.selected = state.pending;
-  state.answers[state.idx] = { num: q.num, stem: q.stem, options: q.options, optOrder: q.optOrder,
-                                answer: q.answer, chosenNum, correct, reason: q.reason };
+function jumpToQuestion(index) {
+  state.idx = index;
+  const ans = state.answers[index];
+  state.selected = ans ? state.pool[index].optOrder.indexOf(ans.chosenNum - 1) : null;
+  state.pending = state.selected;
+  scrollMode = 'top';
   render();
 }
 
@@ -335,7 +337,7 @@ function renderQuiz() {
       icon = '<i class="fa-solid fa-circle-dot text-indigo-500"></i>';
     }
     return `
-      <button onclick="selectOption(${pos})" ${answered ? 'disabled' : ''}
+      <button onclick="selectOption(${pos})"
         class="option-btn w-full text-left px-3 py-2 rounded-xl border-2 flex items-start gap-2 transition ${cls}">
         <span class="flex-shrink-0 w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500">${label}</span>
         <span class="flex-1 text-base font-light leading-snug pt-0.5">${escapeHtml(text)}</span>
@@ -345,8 +347,8 @@ function renderQuiz() {
 
   const answeredList = state.answers.filter(a => a);
   const correctCount = answeredList.filter(a => a.correct).length;
-  const correctNums = answeredList.filter(a => a.correct).map(a => a.num);
-  const wrongNums = answeredList.filter(a => !a.correct).map(a => a.num);
+  const correctItems = state.pool.map((item, i) => ({ num: item.num, idx: i, ans: state.answers[i] })).filter(x => x.ans && x.ans.correct);
+  const wrongItems = state.pool.map((item, i) => ({ num: item.num, idx: i, ans: state.answers[i] })).filter(x => x.ans && !x.ans.correct);
 
   const trackerHtml = state.pool.map((item, i) => {
     const ans = state.answers[i];
@@ -395,8 +397,8 @@ function renderQuiz() {
 
     ${state.answers.length > 0 ? `
     <div class="bg-white rounded-xl border border-gray-200 p-3 mb-6 text-xs space-y-1.5 break-words">
-      <p><i class="fa-solid fa-circle-check mr-1" style="color:#10b981"></i><span class="font-semibold text-gray-600">答對題號：</span>${correctNums.length ? `<span class="text-green-600 font-medium">${correctNums.join('、')}</span>` : '<span class="text-gray-300">尚無</span>'}</p>
-      <p><i class="fa-solid fa-circle-xmark mr-1" style="color:#f43f5e"></i><span class="font-semibold text-gray-600">答錯題號：</span>${wrongNums.length ? `<span class="text-red-500 font-medium">${wrongNums.join('、')}</span>` : '<span class="text-gray-300">尚無</span>'}</p>
+      <p><i class="fa-solid fa-circle-check mr-1" style="color:#10b981"></i><span class="font-semibold text-gray-600">答對題號：</span>${correctItems.length ? correctItems.map(x => `<a href="javascript:void(0)" onclick="jumpToQuestion(${x.idx})" class="text-green-600 font-medium underline hover:text-green-700">${x.num}</a>`).join('、') : '<span class="text-gray-300">尚無</span>'}</p>
+      <p><i class="fa-solid fa-circle-xmark mr-1" style="color:#f43f5e"></i><span class="font-semibold text-gray-600">答錯題號：</span>${wrongItems.length ? wrongItems.map(x => `<a href="javascript:void(0)" onclick="jumpToQuestion(${x.idx})" class="text-red-500 font-medium underline hover:text-red-600">${x.num}</a>`).join('、') : '<span class="text-gray-300">尚無</span>'}</p>
     </div>
     ` : ''}
 
@@ -410,18 +412,13 @@ function renderQuiz() {
         ${optionsHtml}
       </div>
 
-      ${!answered ? `
-      <div class="mt-5 grid ${state.idx > 0 ? 'grid-cols-2' : 'grid-cols-1'} gap-3">
-        ${state.idx > 0 ? `
-        <button onclick="prevQuestion()" class="py-3 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 font-bold transition">
+      ${!answered ? (state.idx > 0 ? `
+      <div class="mt-5">
+        <button onclick="prevQuestion()" class="w-full py-3 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 font-bold transition">
           <i class="fa-solid fa-arrow-left mr-1"></i>上一題
-        </button>` : ''}
-        <button onclick="confirmAnswer()" ${state.pending === null ? 'disabled' : ''}
-          class="py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600">
-          <i class="fa-solid fa-paper-plane mr-1"></i>確定送出
         </button>
       </div>
-      ` : `
+      ` : '') : `
       <div class="mt-4 grid ${state.idx > 0 ? 'grid-cols-2' : 'grid-cols-1'} gap-3">
         ${state.idx > 0 ? `
         <button onclick="prevQuestion()" class="py-3 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 font-bold transition">
