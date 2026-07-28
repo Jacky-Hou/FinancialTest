@@ -411,10 +411,16 @@ function renderQuiz() {
       </div>
 
       ${!answered ? `
-      <button onclick="confirmAnswer()" ${state.pending === null ? 'disabled' : ''}
-        class="mt-5 w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600">
-        <i class="fa-solid fa-paper-plane mr-1"></i>確定送出
-      </button>
+      <div class="mt-5 grid ${state.idx > 0 ? 'grid-cols-2' : 'grid-cols-1'} gap-3">
+        ${state.idx > 0 ? `
+        <button onclick="prevQuestion()" class="py-3 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 font-bold transition">
+          <i class="fa-solid fa-arrow-left mr-1"></i>上一題
+        </button>` : ''}
+        <button onclick="confirmAnswer()" ${state.pending === null ? 'disabled' : ''}
+          class="py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600">
+          <i class="fa-solid fa-paper-plane mr-1"></i>確定送出
+        </button>
+      </div>
       ` : `
       <div class="mt-4 grid ${state.idx > 0 ? 'grid-cols-2' : 'grid-cols-1'} gap-3">
         ${state.idx > 0 ? `
