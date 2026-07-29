@@ -12,6 +12,24 @@
   @keyframes fadeIn { from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
   ::-webkit-scrollbar { width: 8px; }
   ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  .dual-range { position: relative; height: 32px; }
+  .dual-range .track-bg { position: absolute; left: 0; right: 0; top: 14px; height: 4px; background: #e5e7eb; border-radius: 9999px; }
+  .dual-range .track-fill { position: absolute; top: 14px; height: 4px; background: #4f46e5; border-radius: 9999px; }
+  .dual-range input[type=range] {
+    position: absolute; left: 0; top: 0; width: 100%; height: 32px; margin: 0;
+    -webkit-appearance: none; appearance: none; background: transparent; pointer-events: none;
+  }
+  .dual-range input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; pointer-events: auto;
+    width: 20px; height: 20px; border-radius: 50%; background: #4f46e5; border: 3px solid #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,.3); cursor: pointer;
+  }
+  .dual-range input[type=range]::-moz-range-thumb {
+    pointer-events: auto; width: 20px; height: 20px; border-radius: 50%; background: #4f46e5;
+    border: 3px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); cursor: pointer;
+  }
+  .dual-range input[type=range]::-webkit-slider-runnable-track { background: transparent; }
+  .dual-range input[type=range]::-moz-range-track { background: transparent; }
 </style>
 </head>
 <body class="bg-gray-100 min-h-screen text-gray-800">
@@ -42,17 +60,16 @@ const state = {
   selected: null,        // 目前題目已選的選項 index(原始 1-4)
   pending: null,         // 已點選但尚未送出的選項 display pos(未送出前可改選)
   answers: [],           // 依題目索引存放作答紀錄，未作答為 null，{num, correct, chosenNum,...}
-  count: 20,
-  mode: 'sequential',     // 'random' | 'sequential' | null(未選,與range互斥)
-  range: null            // 'all' | 'r1'~'r6' | null(未選,與mode互斥)
+  mode: 'sequential',     // 'random' | 'sequential'
+  range: null,           // 'all' | 'r1'~'r6' | null(自訂範圍,對應不到任一按鈕)
+  rangeMin: 1,           // 拖曳滑桿-起始題號
+  rangeMax: QUIZ_DATA.length // 拖曳滑桿-結束題號
 };
 
 let scrollMode = 'bottom'; // 'bottom' | 'top' —— 顯示新題目時用top，其餘(含確定送出)預設bottom
 
 function getFilteredData() {
-  if (!state.range) return QUIZ_DATA.slice(); // 未選範圍 = 全部題目
-  const r = RANGES.find(x => x.key === state.range) || RANGES[0];
-  return QUIZ_DATA.filter(q => q.num >= r.min && q.num <= r.max);
+  return QUIZ_DATA.filter(q => q.num >= state.rangeMin && q.num <= state.rangeMax);
 }
 
 function shuffle(arr) {
@@ -66,12 +83,8 @@ function shuffle(arr) {
 
 function startQuiz() {
   const filtered = getFilteredData();
-  let pool = state.mode === 'random' ? shuffle(filtered) : filtered.slice();
-  if (!state.range) {
-    // 未選範圍時，才依「題數」設定截取題目
-    pool = pool.slice(0, Math.min(state.count, filtered.length));
-  }
-  // 已選範圍時，不管題數設定為何，一律出範圍內全部題目
+  const pool = state.mode === 'random' ? shuffle(filtered) : filtered.slice();
+  // 一律出「起始題號~結束題號」範圍內的全部題目
   state.pool = pool.map(q => {
     // 建立選項洗牌對照: optOrder 是長度4的陣列，內容為原始 index(0-3)
     const optOrder = shuffle([0,1,2,3]);
@@ -188,14 +201,12 @@ function render() {
 function renderSetup() {
   const total = QUIZ_DATA.length;
   const filteredLen = getFilteredData().length;
-  const sliderMax = total; // 題數滑桿固定以全部題庫為上限，不受範圍影響
   const rangeChips = RANGES.map(r => `
     <button onclick="setRange('${r.key}')" id="range-${r.key}"
       class="range-btn px-3 py-2 rounded-lg border-2 text-sm font-medium transition">
       ${r.label}
     </button>`).join('');
   const rangeLabel = state.range ? (RANGES.find(r => r.key === state.range) || {}).label : null;
-  const willUse = Math.min(state.count, filteredLen); // 實際測驗會用到的題數(受範圍限制)
 
   return `
   <div class="fade-in">
@@ -236,18 +247,36 @@ function renderSetup() {
       </div>
 
       <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-2">題數：<span id="count-label" class="text-indigo-600 font-bold">${state.range ? filteredLen : state.count}</span> 題</label>
-        <input type="range" min="1" max="${sliderMax}" step="1" value="${state.range ? filteredLen : state.count}"
-          oninput="updateCountLive(this.value)" onchange="commitCount(this.value)" id="count-slider"
-          class="w-full accent-indigo-600">
-        <div class="flex justify-between text-xs text-gray-400 mt-1">
-          <span>1</span><span>${sliderMax}</span>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">
+          起訖題號（共 <span id="range-count-label" class="font-semibold text-gray-600">${filteredLen}</span> 題）
+        </label>
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <input type="number" min="1" max="${total}" step="1" value="${state.rangeMin}" id="range-min-input"
+              onchange="setRangeMinInput(this.value)"
+              class="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm text-center font-semibold text-indigo-600 focus:border-indigo-500 focus:outline-none">
+          </div>
+          <div>
+            <input type="number" min="1" max="${total}" step="1" value="${state.rangeMax}" id="range-max-input"
+              onchange="setRangeMaxInput(this.value)"
+              class="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm text-center font-semibold text-indigo-600 focus:border-indigo-500 focus:outline-none">
+          </div>
         </div>
-        <p class="text-xs text-gray-400 mt-1.5">
-          ${state.range
-            ? `已選擇題號範圍，題數自動對應為範圍內全部 <span class="font-semibold text-indigo-600">${filteredLen}</span> 題（拖曳題數將清空範圍選擇）`
-            : `實際將出 <span class="font-semibold text-gray-600">${willUse}</span> 題`}
-        </p>
+        <div class="dual-range">
+          <div class="track-bg"></div>
+          <div class="track-fill" id="track-fill"
+            style="left:${(state.rangeMin - 1) / (total - 1) * 100}%; width:${(state.rangeMax - state.rangeMin) / (total - 1) * 100}%;"></div>
+          <input type="range" min="1" max="${total}" step="1" value="${state.rangeMin}"
+            oninput="dragRangeLive('min', this.value)" onchange="dragRangeCommit('min', this.value)"
+            id="range-min-slider">
+          <input type="range" min="1" max="${total}" step="1" value="${state.rangeMax}"
+            oninput="dragRangeLive('max', this.value)" onchange="dragRangeCommit('max', this.value)"
+            id="range-max-slider">
+        </div>
+        <div class="flex justify-between text-xs text-gray-400 mt-1">
+          <span>1</span><span>${total}</span>
+        </div>
+        <p class="text-xs text-gray-400 mt-1.5">拖曳把手或直接輸入題號，會自動對應上方按鈕（或顯示為自訂範圍）</p>
       </div>
 
       <button onclick="startQuiz()"
@@ -263,21 +292,76 @@ function setMode(m) {
   state.mode = m;
   render();
 }
-function setCount(v) {
-  state.count = parseInt(v);
-  state.range = null; // 手動拖曳/點擊題數時，清空題號範圍選擇
-  render(); // 重新渲染以更新提示文字與範圍按鈕高亮
+function updateRangeLiveDom() {
+  // 拖曳過程中只更新輸入框/滑桿填色，不重新渲染，避免拖曳卡頓
+  const total = QUIZ_DATA.length;
+  const minInput = document.getElementById('range-min-input');
+  const maxInput = document.getElementById('range-max-input');
+  const countEl = document.getElementById('range-count-label');
+  const fill = document.getElementById('track-fill');
+  if (minInput) minInput.value = state.rangeMin;
+  if (maxInput) maxInput.value = state.rangeMax;
+  if (countEl) countEl.textContent = state.rangeMax - state.rangeMin + 1;
+  if (fill) {
+    fill.style.left = ((state.rangeMin - 1) / (total - 1) * 100) + '%';
+    fill.style.width = ((state.rangeMax - state.rangeMin) / (total - 1) * 100) + '%';
+  }
 }
-function updateCountLive(v) {
-  // 拖曳過程中只更新標籤文字，不重新渲染，避免拖曳卡頓
-  const label = document.getElementById('count-label');
-  if (label) label.textContent = v;
+function syncRangeMatch() {
+  // 比對目前起訖題號是否剛好對應某個題號範圍按鈕
+  const total = QUIZ_DATA.length;
+  const match = RANGES.find(r => r.min === state.rangeMin && Math.min(r.max, total) === state.rangeMax);
+  state.range = match ? match.key : null;
 }
-function commitCount(v) {
-  setCount(v); // 放開滑鼠/手指後才正式提交，清空範圍選擇並重新渲染
+function dragRangeLive(which, v) {
+  v = parseInt(v);
+  if (which === 'min') {
+    if (v > state.rangeMax) { v = state.rangeMax; document.getElementById('range-min-slider').value = v; }
+    state.rangeMin = v;
+  } else {
+    if (v < state.rangeMin) { v = state.rangeMin; document.getElementById('range-max-slider').value = v; }
+    state.rangeMax = v;
+  }
+  updateRangeLiveDom();
+}
+function dragRangeCommit(which, v) {
+  dragRangeLive(which, v);
+  syncRangeMatch(); // 放開滑鼠/手指後，比對是否剛好對應某個題號範圍按鈕
+  render();
+}
+function setRangeMinInput(v) {
+  const total = QUIZ_DATA.length;
+  let n = parseInt(v);
+  if (isNaN(n)) n = state.rangeMin;
+  n = Math.max(1, Math.min(n, total));
+  if (n > state.rangeMax) n = state.rangeMax;
+  state.rangeMin = n;
+  syncRangeMatch();
+  render();
+}
+function setRangeMaxInput(v) {
+  const total = QUIZ_DATA.length;
+  let n = parseInt(v);
+  if (isNaN(n)) n = state.rangeMax;
+  n = Math.max(1, Math.min(n, total));
+  if (n < state.rangeMin) n = state.rangeMin;
+  state.rangeMax = n;
+  syncRangeMatch();
+  render();
 }
 function setRange(r) {
-  state.range = (state.range === r) ? null : r; // 再按一次可取消選擇
+  const total = QUIZ_DATA.length;
+  if (state.range === r) {
+    // 再按一次 = 取消，回到全部範圍
+    state.range = null;
+    state.rangeMin = 1;
+    state.rangeMax = total;
+  } else {
+    const rg = RANGES.find(x => x.key === r);
+    state.range = r;
+    state.rangeMin = rg.min;
+    state.rangeMax = Math.min(rg.max, total);
+  }
   render();
 }
 function markRange() {
