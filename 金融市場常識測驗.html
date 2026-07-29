@@ -30,6 +30,13 @@
   }
   .dual-range input[type=range]::-webkit-slider-runnable-track { background: transparent; }
   .dual-range input[type=range]::-moz-range-track { background: transparent; }
+  /* 修正觸控裝置點擊後 hover 樣式殘留(sticky hover)問題 */
+  @media (hover: none) {
+    .option-btn:hover {
+      background-color: transparent !important;
+      border-color: #e5e7eb !important;
+    }
+  }
 </style>
 </head>
 <body class="bg-gray-100 min-h-screen text-gray-800">
@@ -487,7 +494,7 @@ function renderQuiz() {
       <div class="mb-2">
         <span class="inline-block text-xs font-bold text-white bg-indigo-600 rounded-full px-2 py-1">題${q.num}</span>
       </div>
-      <h2 class="text-lg font-normal text-gray-900 leading-snug mb-5">${escapeHtml(q.stem)}</h2>
+      <h2 class="text-lg font-light text-gray-900 leading-snug mb-5">${escapeHtml(q.stem)}</h2>
 
       <div class="space-y-2">
         ${optionsHtml}
