@@ -177,6 +177,12 @@ function backToResult() {
 
 /* ===== 畫面渲染 ===== */
 function render() {
+  // iOS Safari 修正：click 事件處理中若同步整段替換 innerHTML，
+  // WebKit 可能將同一次點擊的 ghost click 誤觸到新DOM(常誤觸到「正確答案」選項)。
+  // 延後到下一個 tick 執行，讓本次點擊事件先完整結束再換DOM。
+  setTimeout(_renderNow, 0);
+}
+function _renderNow() {
   const app = document.getElementById('app');
   if (state.screen === 'setup') {
     app.innerHTML = renderSetup();
@@ -501,7 +507,7 @@ function renderQuiz() {
       </div>
 
       ${answered && !lastAnswer.correct ? `
-      <div class="mt-3 p-3 rounded-lg bg-red-50 border border-red-100 text-red-700 text-xs leading-relaxed">
+      <div class="mt-3 p-3 rounded-lg bg-red-50 border border-red-100 text-red-700 text-sm leading-relaxed">
         <i class="fa-solid fa-lightbulb mr-1"></i><span class="font-semibold">解析：</span>${escapeHtml(lastAnswer.reason)}
       </div>` : ''}
 
@@ -595,7 +601,7 @@ function renderReview() {
         <h3 class="text-sm font-semibold text-gray-900 leading-relaxed">${escapeHtml(a.stem)}</h3>
       </div>
       <div class="space-y-2">${optsHtml}</div>
-      ${a.reason ? `<div class="mt-3 p-3 rounded-lg bg-red-50 text-red-600 text-xs leading-relaxed">${escapeHtml(a.reason)}</div>` : ''}
+      ${a.reason ? `<div class="mt-3 p-3 rounded-lg bg-red-50 text-red-600 text-sm leading-relaxed">${escapeHtml(a.reason)}</div>` : ''}
     </div>`;
   }).join('');
 
