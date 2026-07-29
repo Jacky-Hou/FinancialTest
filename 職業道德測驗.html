@@ -106,7 +106,12 @@ function startQuiz() {
   render();
 }
 
+let optionClickLock = false; // iOS Safari 修正：防止 ghost click 在極短時間內重複觸發選項點擊
 function selectOption(displayPos) {
+  if (optionClickLock) return; // 鎖定期間內的重複點擊(常為ghost click)一律忽略
+  optionClickLock = true;
+  setTimeout(() => { optionClickLock = false; }, 400);
+
   const q = state.pool[state.idx];
   const originalIdx = q.optOrder[displayPos]; // 0-based 原始選項index
   const chosenNum = originalIdx + 1; // 1-4
