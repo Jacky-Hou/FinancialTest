@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>職業道德 測驗</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
@@ -37,6 +37,8 @@
       border-color: #e5e7eb !important;
     }
   }
+  /* 修正 iOS Safari 300ms tap 延遲導致的 ghost click 問題 */
+  .option-btn { touch-action: manipulation; }
 </style>
 </head>
 <body class="bg-gray-100 min-h-screen text-gray-800">
