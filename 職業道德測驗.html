@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
   body { font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif; overscroll-behavior-y: contain; }
-  .fade-in { animation: fadeIn .25s ease-out; }
+  .fade-in { }
   @keyframes fadeIn { from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
   ::-webkit-scrollbar { width: 8px; }
   ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -30,13 +30,7 @@
   }
   .dual-range input[type=range]::-webkit-slider-runnable-track { background: transparent; }
   .dual-range input[type=range]::-moz-range-track { background: transparent; }
-  /* 修正觸控裝置點擊後 hover 樣式殘留(sticky hover)問題 */
-  @media (hover: none) {
-    .option-btn:hover {
-      background-color: transparent !important;
-      border-color: #e5e7eb !important;
-    }
-  }
+  /* 已移除：舊有的觸控 hover 殘留修正規則，會用 !important 蓋掉作答後的紅/綠框 */
   /* 修正 iOS Safari 300ms tap 延遲導致的 ghost click 問題 */
   .option-btn { touch-action: manipulation; }
 </style>
