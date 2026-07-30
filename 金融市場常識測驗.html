@@ -199,6 +199,8 @@ function _renderNow() {
   else if (state.screen === 'quiz') app.innerHTML = renderQuiz();
   else if (state.screen === 'result') app.innerHTML = renderResult();
   else if (state.screen === 'review') app.innerHTML = renderReview();
+  // 修正 iOS Safari 偶發不重繪選項顏色(紅/綠框)的問題：強制瀏覽器完成兩次繪製
+  requestAnimationFrame(() => { requestAnimationFrame(() => {}); });
   if (state.screen === 'quiz' || state.screen === 'setup') {
     const mode = scrollMode;
     setTimeout(() => {
