@@ -111,6 +111,7 @@ function startQuiz() {
 let optionClickLock = false; // iOS Safari 修正：防止 ghost click 在極短時間內重複觸發選項點擊
 function selectOption(displayPos) {
   if (optionClickLock) return; // 鎖定期間內的重複點擊(常為ghost click)一律忽略
+  if (state.answers[state.idx]) return; // 本題已送出作答，鎖定不可再變更
   optionClickLock = true;
   setTimeout(() => { optionClickLock = false; }, 400);
 
